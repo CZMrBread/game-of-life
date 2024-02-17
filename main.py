@@ -1,3 +1,5 @@
+import random as rand
+
 from bcolors import Bcolors
 from cell import Cell
 
@@ -7,11 +9,11 @@ GENERATIONS = 1
 BOARD = [[Cell(0, 0) for i in range(WIDTH)] for j in range(HEIGHT)]
 
 OPTIONS = {
-    "stopAfterEachGeneration": {"name": "Pause between generations", "value": False},
-    "showGenerationNumber": {"name": "Show generation number", "value": True},
-    "showBetweenStates": {"name": "Show between states", "value": True},
-    "showUpdatedBoard": {"name": "Show updated board", "value": True},
-    "infiniteBoard": {"name": "Infinite board", "value": True},
+    "stopAfterEachGeneration": {"id_option": 1, "name": "Pause between generations", "value": False},
+    "showGenerationNumber": {"id_option": 2, "name": "Show generation number", "value": True},
+    "showBetweenStates": {"id_option": 3, "name": "Show between states", "value": True},
+    "showUpdatedBoard": {"id_option": 4, "name": "Show updated board", "value": True},
+    "infiniteBoard": {"id_option": 5, "name": "Infinite board", "value": True},
 }
 
 
@@ -22,6 +24,7 @@ def menu():
                        "Run for 10 generations",
                        "Run for X generations",
                        "Options",
+                       "Random board",
                        "Clear the board",
                        "Help"]
         for i, option in enumerate(menuOptions, 1):
@@ -37,12 +40,18 @@ def menu():
             case "4":
                 options()
             case "5":
+                percent = input(f"{Bcolors.BOLD}Enter the chance of cell birth (0-100):{Bcolors.END}")
+                if percent.isdigit() and 0 <= int(percent) <= 100:
+                    randomBoard(int(percent))
+                else:
+                    print(f"{Bcolors.FAIL}Invalid input.{Bcolors.END}")
+            case "6":
                 for row in BOARD:
                     for cell in row:
                         cell.setDead()
                 printBoard()
                 print(f"{Bcolors.BOLD}Board is cleared{Bcolors.END}")
-            case "6" | "help":
+            case "7" | "help":
                 helpMenu()
             case _:
                 print(f"{Bcolors.FAIL}Invalid choice.{Bcolors.END}")
@@ -51,42 +60,39 @@ def menu():
 
 def helpMenu():
     print(f"{Bcolors.HEADER}Help:{Bcolors.END}")
-    print(f"{Bcolors.BLUE}   ███{Bcolors.END} cells are alive")
-    print(f"{Bcolors.OK}   ▓▓▓{Bcolors.END} cells will be born in the next generation")
-    print(f"{Bcolors.FAIL}   ▓▓▓{Bcolors.END} cells will die in the next generation")
-    print(f"   ▓▓▓ cells are empty")
+    print(f"{Cell.liveCell()} cells are alive")
+    print(f"{Cell.bornCell()} cells will be born in the next generation")
+    print(f"{Cell.deadCell()} cells will die in the next generation")
+    print(f"{Cell.emptyCell()} cells are empty")
+    print(f"{Bcolors.BOLD}{'─' * 30}{Bcolors.END}")
 
 
 def options():
+    def switchOptions(option):
+        OPTIONS[option]["value"] = not OPTIONS[option]["value"]
+
     while True:
         success = f"{Bcolors.BOLD}[{Bcolors.PASS}ON{Bcolors.END}{Bcolors.BOLD}/OFF]{Bcolors.END}"
         failure = f"{Bcolors.BOLD}[ON{Bcolors.BOLD}/{Bcolors.FAIL}OFF{Bcolors.END}{Bcolors.BOLD}]{Bcolors.END}"
         print(f"{Bcolors.HEADER}Options:{Bcolors.END}")
         i = 1
         print(f"{Bcolors.BOLD}{Bcolors.HELP}{0:>3}. Back to menu.{Bcolors.END}")
-        for key, value in OPTIONS.items():
+        for key, value in sorted(OPTIONS.items(), key=lambda x: x[1]["id_option"]):
             if value["value"]:
-                print(f"{Bcolors.BOLD}{i:>3}. {value['name']:<40}{success}{Bcolors.END}")
+                print(f"{Bcolors.BOLD}{value['id_option']:>3}. {value['name']:<40}{success}{Bcolors.END}")
             else:
-                print(f"{Bcolors.BOLD}{i:>3}. {value['name']:<40}{failure}{Bcolors.END}")
+                print(f"{Bcolors.BOLD}{value['id_option']:>3}. {value['name']:<40}{failure}{Bcolors.END}")
             i += 1
         choice = input(f"{Bcolors.BOLD}Enter the number of the option you want to change:{Bcolors.END}")
         print(f"{Bcolors.BOLD}{'─' * 30}{Bcolors.END}")
-        match choice:
-            case "0":
+        if choice == "0":
+            break
+        for key, value in OPTIONS.items():
+            if str(value["id_option"]) == choice:
+                switchOptions(key)
                 break
-            case "1":
-                OPTIONS["stopAfterEachGeneration"]["value"] = not OPTIONS["stopAfterEachGeneration"]["value"]
-            case "2":
-                OPTIONS["showGenerationNumber"]["value"] = not OPTIONS["showGenerationNumber"]["value"]
-            case "3":
-                OPTIONS["showBetweenStates"]["value"] = not OPTIONS["showBetweenStates"]["value"]
-            case "4":
-                OPTIONS["showUpdatedBoard"]["value"] = not OPTIONS["showUpdatedBoard"]["value"]
-            case "5":
-                OPTIONS["infiniteBoard"]["value"] = not OPTIONS["infiniteBoard"]["value"]
-            case _:
-                print(f"{Bcolors.FAIL}Invalid choice.{Bcolors.END}")
+        else:
+            print(f"{Bcolors.FAIL}Invalid choice.{Bcolors.END}")
 
 
 def printBoard():
@@ -113,34 +119,22 @@ def updateBoard():
 
     for i in range(HEIGHT):
         for j in range(WIDTH):
-            if OPTIONS["infiniteBoard"]['value']:
-                topLeft = BOARD[(i - 1) % HEIGHT][(j - 1) % WIDTH].status
-                top = BOARD[(i - 1) % HEIGHT][j].status
-                topRight = BOARD[(i - 1) % HEIGHT][(j + 1) % WIDTH].status
-                left = BOARD[i][(j - 1) % WIDTH].status
-                right = BOARD[i][(j + 1) % WIDTH].status
-                bottomLeft = BOARD[(i + 1) % HEIGHT][(j - 1) % WIDTH].status
-                bottom = BOARD[(i + 1) % HEIGHT][j].status
-                bottomRight = BOARD[(i + 1) % HEIGHT][(j + 1) % WIDTH].status
-            else:
-                topLeft = BOARD[i - 1][j - 1].status if 0 < i - 1 < HEIGHT and 0 < j - 1 < WIDTH else 0
-                top = BOARD[i - 1][j].status if 0 < i - 1 < HEIGHT else 0
-                topRight = BOARD[i - 1][j + 1].status if 0 < i - 1 < HEIGHT and 0 < j + 1 < WIDTH else 0
-                left = BOARD[i][j - 1].status if 0 < j - 1 < WIDTH else 0
-                right = BOARD[i][j + 1].status if 0 < j + 1 < WIDTH else 0
-                bottomLeft = BOARD[i + 1][j - 1].status if 0 < i + 1 < HEIGHT and 0 < j - 1 < WIDTH else 0
-                bottom = BOARD[i + 1][j].status if 0 < i + 1 < HEIGHT else 0
-                bottomRight = BOARD[i + 1][j + 1].status if (0 < i + 1 < HEIGHT and 0 < j + 1
-                                                             < WIDTH) else 0
-
-            count = topLeft + top + topRight + left + right + bottomLeft + bottom + bottomRight
-
+            count = 0
+            for x in range(-1, 2):
+                for y in range(-1, 2):
+                    if x == 0 and y == 0:
+                        continue
+                    if OPTIONS["infiniteBoard"]["value"]:
+                        count += BOARD[(i + x) % HEIGHT][(j + y) % WIDTH].status
+                    else:
+                        if 0 <= i + x < HEIGHT and 0 <= j + y < WIDTH:
+                            count += BOARD[i + x][j + y].status
             if BOARD[i][j].status == 1:
                 if count < 2 or count > 3:
-                    BOARD[i][j].next_status = 0
+                    BOARD[i][j].die()
             else:
                 if count == 3:
-                    BOARD[i][j].next_status = 1
+                    BOARD[i][j].born()
     if OPTIONS["showGenerationNumber"]["value"]:
         print(f"{Bcolors.HEADER}Generation {GENERATIONS}:{Bcolors.END}")
     if OPTIONS["showBetweenStates"]["value"]:
@@ -193,6 +187,15 @@ def edit():
             cell.setAlive()
         else:
             cell.setDead()
+
+def randomBoard(percent=50):
+    for row in BOARD:
+        for cell in row:
+            chance = rand.randint(1, 100)
+            if chance <= percent:
+                cell.setAlive()
+            else:
+                cell.setDead()
 
 
 if __name__ == "__main__":

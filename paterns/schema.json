@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Board",
+  "description": "Schema json board creation",
+  "type": "object",
+  "properties": {
+    "type": {
+      "description": "Type of pattern",
+      "type": "string",
+      "enum": [
+        "Still lives",
+        "Oscillators",
+        "Spaceships",
+        "Methuselahs",
+        "Guns",
+        "Puffers",
+        "Wick",
+        "Other"
+      ]
+    },
+    "board": {
+      "description": "Create a board with the given pattern",
+      "type": "array",
+      "minItems": 20,
+      "maxItems": 20,
+      "items": {
+        "type": "array",
+        "minItems": 20,
+        "maxItems": 20,
+        "items": {
+          "description": "Cell",
+          "type": "integer",
+          "enum": [
+            0,
+            1
+          ]
+        }
+      }
+    }
+  }
+}
