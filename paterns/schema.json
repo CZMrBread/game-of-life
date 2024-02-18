@@ -4,6 +4,10 @@
   "description": "Schema json board creation",
   "type": "object",
   "properties": {
+    "name": {
+      "description": "Name of the pattern",
+      "type": "string"
+    },
     "type": {
       "description": "Type of pattern",
       "type": "string",

@@ -1,5 +1,6 @@
 {
-  "$schema": "schema.json", 
+  "$schema": "schema.json",
+  "name": "Block",
   "type": "Still lives", 
   "board": [
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
