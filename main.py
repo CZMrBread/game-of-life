@@ -1,3 +1,5 @@
+import json
+import os
 import random as rand
 
 from bcolors import Bcolors
@@ -17,6 +19,30 @@ OPTIONS = {
 }
 
 
+def loadJson():
+    jsonFiles = {
+        "Still lives": [],
+        "Oscillators": [],
+        "Spaceships": [],
+        "Methuselahs": [],
+        "Guns": [],
+        "Puffers": [],
+        "Wick": [],
+        "Other": []
+    }
+    for file in JSON_FILES_NAMES:
+        with open(f"patterns/{file}", "r") as f:
+            data = json.load(f)
+            name = data.get("name")
+            patternType = data.get("type")
+            jsonFiles[patternType].append((name, file))
+    return jsonFiles
+
+
+JSON_FILES_NAMES = os.listdir("patterns")
+JSON_FILES = loadJson()
+
+
 def menu():
     while True:
         print(f"{Bcolors.HEADER}Please select an option:{Bcolors.END}")
@@ -24,6 +50,7 @@ def menu():
                        "Run for 10 generations",
                        "Run for X generations",
                        "Options",
+                       "Load a pattern",
                        "Random board",
                        "Clear the board",
                        "Help"]
@@ -36,28 +63,31 @@ def menu():
             case "2":
                 run(10)
             case "3":
-                run(int(input(f"{Bcolors.BOLD}Enter the number of generations:{Bcolors.END}")))
+                generations = input(f"{Bcolors.BOLD}Enter the number of generations:{Bcolors.END}")
+                if generations.isdigit():
+                    run(int(generations))
+                else:
+                    print(f"{Bcolors.FAIL}Invalid input.{Bcolors.END}")
             case "4":
                 options()
             case "5":
-                percent = input(f"{Bcolors.BOLD}Enter the chance of cell birth (0-100):{Bcolors.END}")
-                if percent.isdigit() and 0 <= int(percent) <= 100:
-                    randomBoard(int(percent))
-                else:
-                    print(f"{Bcolors.FAIL}Invalid input.{Bcolors.END}")
+                printJsonFiles(JSON_FILES)
             case "6":
-                for row in BOARD:
-                    for cell in row:
-                        cell.setDead()
+                randomBoard()
+            case "7":
+                clearBoard()
                 printBoard()
                 print(f"{Bcolors.BOLD}Board is cleared{Bcolors.END}")
-            case "7" | "help":
+            case "8" | "help":
                 helpMenu()
             case _:
                 print(f"{Bcolors.FAIL}Invalid choice.{Bcolors.END}")
         print(f"{Bcolors.BOLD}{'─' * 30}{Bcolors.END}")
 
-
+def clearBoard():
+    for row in BOARD:
+        for cell in row:
+            cell.setDead()
 def helpMenu():
     print(f"{Bcolors.HEADER}Help:{Bcolors.END}")
     print(f"{Cell.liveCell()} cells are alive")
@@ -188,14 +218,59 @@ def edit():
         else:
             cell.setDead()
 
-def randomBoard(percent=50):
-    for row in BOARD:
-        for cell in row:
-            chance = rand.randint(1, 100)
-            if chance <= percent:
-                cell.setAlive()
-            else:
-                cell.setDead()
+
+def randomBoard():
+    while True:
+        percent = input(f"{Bcolors.BOLD}Enter the chance of cell birth (0-100):{Bcolors.END}")
+        if not percent.isdigit() and 0 >= int(percent) >= 100:
+            print(f"{Bcolors.FAIL}Invalid input.{Bcolors.END}")
+            break
+        percent = int(percent)
+        for row in BOARD:
+            for cell in row:
+                chance = rand.randint(1, 100)
+                if chance <= percent:
+                    cell.setAlive()
+                else:
+                    cell.setDead()
+        break
+
+
+def printJsonFiles(jsonFiles):
+    while True:
+        i = 1
+        print(f"{Bcolors.HELP}{Bcolors.BOLD}Enter 0 to exit.{Bcolors.END}")
+        print(f"{Bcolors.HEADER}Patterns:{Bcolors.END}")
+        for key, value in jsonFiles.items():
+            if not value:
+                continue
+            print(f"{Bcolors.HEADER}{key}:{Bcolors.END}")
+            for name, file in value:
+                print(f"{i:>3}. {file}")
+                i += 1
+            print(f"{Bcolors.BOLD}{'─' * 30}{Bcolors.END}")
+
+        file = input(f"{Bcolors.BOLD}Enter the name (case-dependent) of the file you want to load: {Bcolors.END}")
+        if file == "0":
+            break
+        if file not in JSON_FILES_NAMES:
+            print(f"{Bcolors.FAIL}Invalid file.{Bcolors.END}")
+            continue
+        loadPattern(file)
+        printBoard()
+        break
+
+
+def loadPattern(file):
+    clearBoard()
+    with open(f"patterns/{file}", "r") as f:
+        data = json.load(f)
+        board = data.get("board")
+        for i, row in enumerate(board):
+            for j, cell in enumerate(row):
+                if cell == 1:
+                    BOARD[i][j].setAlive()
+    print(f"{Bcolors.PASS}Pattern loaded.{Bcolors.END}")
 
 
 if __name__ == "__main__":
@@ -203,9 +278,9 @@ if __name__ == "__main__":
     ▓█▓█▓█▀▀▓█▓▓▓█▀▀▓█▀█▓█▄█▓█▀▀▓▓▓▀█▀▓█▀█▓▓▓▀█▀▓█▓█▓█▀▀
     ▓█▄█▓█▀▀▓█▓▓▓█▓▓▓█▓█▓█▓█▓█▀▀▓▓▓▓█▓▓█▓█▓▓▓▓█▓▓█▀█▓█▀▀
     ▓▀▓▀▓▀▀▀▓▀▀▀▓▀▀▀▓▀▀▀▓▀▓▀▓▀▀▀▓▓▓▓▀▓▓▀▀▀▓▓▓▓▀▓▓▀▓▀▓▀▀▀
-    ▓█▀▀▓█▀█▓█▄█▓█▀▀▓▓▓█▀█▓█▀▀▓▓▓█▓▓▓▀█▀▓█▀▀▓█▀▀▓█      
-    ▓█▓█▓█▀█▓█▓█▓█▀▀▓▓▓█▓█▓█▀▀▓▓▓█▓▓▓▓█▓▓█▀▀▓█▀▀▓▀      
-    ▓▀▀▀▓▀▓▀▓▀▓▀▓▀▀▀▓▓▓▀▀▀▓▀▓▓▓▓▓▀▀▀▓▀▀▀▓▀▓▓▓▀▀▀▓▀      
+    ▓█▀▀▓█▀█▓█▄█▓█▀▀▓▓▓█▀█▓█▀▀▓▓▓█▓▓▓▀█▀▓█▀▀▓█▀▀▓█
+    ▓█▓█▓█▀█▓█▓█▓█▀▀▓▓▓█▓█▓█▀▀▓▓▓█▓▓▓▓█▓▓█▀▀▓█▀▀▓▀
+    ▓▀▀▀▓▀▓▀▓▀▓▀▓▀▀▀▓▓▓▀▀▀▓▀▓▓▓▓▓▀▀▀▓▀▀▀▓▀▓▓▓▀▀▀▓▀
     {Bcolors.END}""")
     welcomeText = f"{Bcolors.HEADER}Press Enter to continue.{Bcolors.END}"
     welcome = input(f"{welcomeText:─^70}")
